@@ -5,16 +5,19 @@
     <title>Netlify CMS</title>
   </head>
   <body>
-    <!-- Load Netlify CMS from Netlify's recommended CDN -->
+    <!-- Optional root element for CMS -->
+    <div id="nc-root"></div>
+
+    <!-- Load Netlify CMS from CDN -->
     <script src="https://unpkg.com/netlify-cms@^2.15.57/dist/netlify-cms.js"></script>
 
+    <!-- Initialize Netlify CMS -->
     <script>
-      // Ensure CMS loads only after script is ready
       window.addEventListener('load', function () {
         if (window.NetlifyCmsApp) {
           window.NetlifyCmsApp.init();
         } else {
-          console.error("NetlifyCmsApp is still not loaded!");
+          console.error("NetlifyCmsApp is not loaded");
         }
       });
     </script>
