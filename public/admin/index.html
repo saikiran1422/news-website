@@ -5,19 +5,18 @@
     <title>Netlify CMS</title>
   </head>
   <body>
-    <!-- Container for CMS (optional) -->
-    <div id="nc-root"></div>
+    <!-- Load Netlify CMS from Netlify's recommended CDN -->
+    <script src="https://unpkg.com/netlify-cms@^2.15.57/dist/netlify-cms.js"></script>
 
-    <!-- Load Netlify CMS from jsDelivr -->
-    <script src="https://cdn.jsdelivr.net/npm/netlify-cms@^2.15.0/dist/netlify-cms.js"></script>
-
-    <!-- Initialize CMS -->
     <script>
-      if (window.NetlifyCmsApp) {
-        window.NetlifyCmsApp.init();
-      } else {
-        console.error("NetlifyCmsApp is not loaded");
-      }
+      // Ensure CMS loads only after script is ready
+      window.addEventListener('load', function () {
+        if (window.NetlifyCmsApp) {
+          window.NetlifyCmsApp.init();
+        } else {
+          console.error("NetlifyCmsApp is still not loaded!");
+        }
+      });
     </script>
   </body>
 </html>
