@@ -5,12 +5,12 @@
     <title>Netlify CMS</title>
   </head>
   <body>
-    <script src="https://unpkg.com/netlify-cms-app@^2.15.57/dist/netlify-cms-app.js"></script>
+    <script src="https://unpkg.com/netlify-cms-app/dist/netlify-cms-app.js"></script>
     <script>
       if (window.NetlifyCmsApp) {
         window.NetlifyCmsApp.init();
       } else {
-        document.body.innerHTML = "<h2>⚠️ CMS failed to load</h2>";
+        document.body.innerHTML = "<h2>⚠️ CMS failed to load (script missing)</h2>";
         console.error("NetlifyCmsApp not available");
       }
     </script>
