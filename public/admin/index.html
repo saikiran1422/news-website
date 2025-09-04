@@ -5,14 +5,20 @@
     <title>Netlify CMS</title>
   </head>
   <body>
+    <!-- Load Netlify CMS App -->
     <script src="https://unpkg.com/netlify-cms-app/dist/netlify-cms-app.js"></script>
+
+    <!-- Initialize CMS -->
     <script>
-      if (window.NetlifyCmsApp) {
-        window.NetlifyCmsApp.init();
-      } else {
-        document.body.innerHTML = "<h2>⚠️ CMS failed to load (script missing)</h2>";
-        console.error("NetlifyCmsApp not available");
-      }
+      document.addEventListener("DOMContentLoaded", function () {
+        if (window.NetlifyCmsApp) {
+          NetlifyCmsApp.init();
+          console.log("✅ Netlify CMS loaded");
+        } else {
+          document.body.innerHTML = "<h2>⚠️ CMS failed to load (NetlifyCmsApp missing)</h2>";
+          console.error("NetlifyCmsApp not available");
+        }
+      });
     </script>
   </body>
 </html>
