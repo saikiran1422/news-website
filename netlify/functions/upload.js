@@ -676,6 +676,128 @@
 
 // netlify/functions/upload.js
 // Server-side Netlify Function — uses SERVICE_ROLE_KEY from process.env only (never commit it)
+// const { createClient } = require("@supabase/supabase-js");
+// const formidableLib = require("formidable");
+// const fs = require("fs");
+// const { Readable } = require("stream");
+
+// const SUPABASE_URL = process.env.SUPABASE_URL;
+// const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// const BUCKET = process.env.SUPABASE_UPLOAD_BUCKET || "article-images";
+
+// if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+//   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment");
+// }
+
+// const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+//   auth: { persistSession: false },
+// });
+
+// exports.handler = async function (event, context) {
+//   try {
+//     if (event.httpMethod !== "POST") {
+//       return {
+//         statusCode: 405,
+//         body: JSON.stringify({ error: "Method not allowed - use POST" }),
+//       };
+//     }
+
+//     // Ensure Content-Type header exists
+//     const headers = event.headers || {};
+//     const contentType = headers["content-type"] || headers["Content-Type"];
+//     if (!contentType || !contentType.startsWith("multipart/form-data")) {
+//       return {
+//         statusCode: 400,
+//         body: JSON.stringify({ error: "Content-Type must be multipart/form-data" }),
+//       };
+//     }
+
+//     // Build a buffer from the event body (Netlify may base64-encode)
+//     const buffer = event.isBase64Encoded
+//       ? Buffer.from(event.body || "", "base64")
+//       : Buffer.from(event.body || "", "utf8");
+
+//     // Create a readable stream that mimics an http.IncomingMessage
+//     const req = new Readable();
+//     req.push(buffer);
+//     req.push(null);
+
+//     // Provide headers (formidable expects headers and content-length)
+//     req.headers = {
+//       ...headers,
+//       "content-type": contentType,
+//       "content-length": String(buffer.length),
+//     };
+//     req.method = event.httpMethod;
+//     req.url = event.path;
+
+//     // parse form with formidable
+//     const IncomingForm = formidableLib.IncomingForm || formidableLib;
+//     const form = new IncomingForm({
+//       keepExtensions: true,
+//       multiples: false,
+//       maxFileSize: 20 * 1024 * 1024, // 20 MB
+//     });
+
+//     const parseResult = await new Promise((resolve, reject) => {
+//       form.parse(req, (err, fields, files) => {
+//         if (err) return reject(err);
+//         resolve({ fields, files });
+//       });
+//     });
+
+//     const { files } = parseResult;
+//     const fileObj = files?.file || files?.image || (files && Object.values(files)[0]);
+//     if (!fileObj) {
+//       return { statusCode: 400, body: JSON.stringify({ error: "No file uploaded (field 'file' or 'image')" }) };
+//     }
+
+//     // Get filepath depending on formidable version
+//     const localPath = fileObj.filepath || fileObj.path;
+//     if (!localPath || !fs.existsSync(localPath)) {
+//       return { statusCode: 500, body: JSON.stringify({ error: "Uploaded file not available on server" }) };
+//     }
+
+//     const fileBuffer = fs.readFileSync(localPath);
+//     const originalName = fileObj.originalFilename || fileObj.name || "upload";
+//     const mimeType = fileObj.mimetype || fileObj.type || "application/octet-stream";
+
+//     // sanitize filename and build unique path
+//     const safeName = (originalName || "file").replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.]/g, "");
+//     const random = Math.floor(Math.random() * 1e6);
+//     const path = `${new Date().toISOString().slice(0, 10)}-${Date.now()}-${random}-${safeName}`;
+
+//     // Upload to Supabase storage (service role key)
+//     const { data: uploadData, error: uploadError } = await supabase.storage
+//       .from(BUCKET)
+//       .upload(path, fileBuffer, { contentType: mimeType });
+
+//     if (uploadError) {
+//       console.error("Supabase upload error:", uploadError);
+//       return { statusCode: 500, body: JSON.stringify({ error: uploadError.message || uploadError }) };
+//     }
+
+//     // Get public URL (works if bucket is public)
+//     const { data: publicData, error: publicError } = supabase.storage.from(BUCKET).getPublicUrl(uploadData.path);
+//     if (publicError) console.warn("getPublicUrl error:", publicError);
+
+//     return {
+//       statusCode: 200,
+//       body: JSON.stringify({
+//         path: uploadData.path,
+//         publicUrl: publicData?.publicUrl || null,
+//       }),
+//     };
+//   } catch (err) {
+//     console.error("Upload handler error (unexpected):", err && err.stack ? err.stack : err);
+//     // Return plain JSON body (client expects JSON)
+//     return { statusCode: 500, body: JSON.stringify({ error: (err && err.message) || "Unexpected server error" }) };
+//   }
+// };
+
+
+// netlify/functions/upload.js
+// Defensive upload handler using formidable; logs parsed file shape for debugging.
 const { createClient } = require("@supabase/supabase-js");
 const formidableLib = require("formidable");
 const fs = require("fs");
@@ -696,33 +818,22 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 exports.handler = async function (event, context) {
   try {
     if (event.httpMethod !== "POST") {
-      return {
-        statusCode: 405,
-        body: JSON.stringify({ error: "Method not allowed - use POST" }),
-      };
+      return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
     }
 
-    // Ensure Content-Type header exists
     const headers = event.headers || {};
     const contentType = headers["content-type"] || headers["Content-Type"];
     if (!contentType || !contentType.startsWith("multipart/form-data")) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Content-Type must be multipart/form-data" }),
-      };
+      return { statusCode: 400, body: JSON.stringify({ error: "Content-Type must be multipart/form-data" }) };
     }
 
-    // Build a buffer from the event body (Netlify may base64-encode)
-    const buffer = event.isBase64Encoded
-      ? Buffer.from(event.body || "", "base64")
-      : Buffer.from(event.body || "", "utf8");
+    // Build a buffer from event body (Netlify may base64 encode)
+    const buffer = event.isBase64Encoded ? Buffer.from(event.body || "", "base64") : Buffer.from(event.body || "", "utf8");
 
-    // Create a readable stream that mimics an http.IncomingMessage
+    // Make a readable stream with headers so formidable can parse
     const req = new Readable();
     req.push(buffer);
     req.push(null);
-
-    // Provide headers (formidable expects headers and content-length)
     req.headers = {
       ...headers,
       "content-type": contentType,
@@ -731,43 +842,86 @@ exports.handler = async function (event, context) {
     req.method = event.httpMethod;
     req.url = event.path;
 
-    // parse form with formidable
+    // Parse with formidable
     const IncomingForm = formidableLib.IncomingForm || formidableLib;
     const form = new IncomingForm({
       keepExtensions: true,
       multiples: false,
-      maxFileSize: 20 * 1024 * 1024, // 20 MB
+      maxFileSize: 50 * 1024 * 1024,
     });
 
-    const parseResult = await new Promise((resolve, reject) => {
+    const { fields, files } = await new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
         if (err) return reject(err);
         resolve({ fields, files });
       });
     });
 
-    const { files } = parseResult;
+    // pick the first file field (common names: file, image)
     const fileObj = files?.file || files?.image || (files && Object.values(files)[0]);
+    console.log("parsed file object keys:", Object.keys(fileObj || {}));
+    console.log("parsed file object sample:", {
+      originalFilename: fileObj?.originalFilename || fileObj?.name,
+      filepath: fileObj?.filepath || fileObj?.path,
+      size: fileObj?.size,
+      mimetype: fileObj?.mimetype || fileObj?.type,
+      _writeStream_path: fileObj?._writeStream?.path
+    });
+
     if (!fileObj) {
-      return { statusCode: 400, body: JSON.stringify({ error: "No file uploaded (field 'file' or 'image')" }) };
+      return { statusCode: 400, body: JSON.stringify({ error: "No file uploaded" }) };
     }
 
-    // Get filepath depending on formidable version
-    const localPath = fileObj.filepath || fileObj.path;
-    if (!localPath || !fs.existsSync(localPath)) {
-      return { statusCode: 500, body: JSON.stringify({ error: "Uploaded file not available on server" }) };
-    }
-
-    const fileBuffer = fs.readFileSync(localPath);
+    // Try multiple ways to find the temporary file path
+    const localPath = fileObj.filepath || fileObj.path || fileObj._writeStream?.path;
+    let fileBuffer = null;
     const originalName = fileObj.originalFilename || fileObj.name || "upload";
     const mimeType = fileObj.mimetype || fileObj.type || "application/octet-stream";
 
-    // sanitize filename and build unique path
-    const safeName = (originalName || "file").replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.]/g, "");
+    if (localPath && fs.existsSync(localPath)) {
+      fileBuffer = fs.readFileSync(localPath);
+    } else {
+      // fallback: some formidable versions put the bytes in a property (rare)
+      // try to extract buffer from fileObj in-memory properties
+      if (fileObj._writeStream && fileObj._writeStream.getBuffer && typeof fileObj._writeStream.getBuffer === "function") {
+        try {
+          fileBuffer = fileObj._writeStream.getBuffer();
+        } catch (err) {
+          // ignore
+        }
+      }
+
+      // Another fallback: attempt to read from `fileObj.toJSON()` or similar (best-effort)
+      if (!fileBuffer && fileObj?.size && fileObj?.size > 0) {
+        // As a last resort, return helpful debugging info (so you can inspect function logs)
+        console.error("No temporary file path found for upload. file object:", Object.keys(fileObj));
+        return {
+          statusCode: 500,
+          body: JSON.stringify({
+            error: "Uploaded file not available on server",
+            debug: {
+              originalFilename: originalName,
+              size: fileObj.size,
+              possiblePaths: {
+                filepath: fileObj.filepath || null,
+                path: fileObj.path || null,
+                _writeStream_path: fileObj._writeStream?.path || null
+              }
+            }
+          }),
+        };
+      }
+    }
+
+    if (!fileBuffer) {
+      return { statusCode: 500, body: JSON.stringify({ error: "Uploaded file not available on server" }) };
+    }
+
+    // sanitize filename and upload to Supabase storage
+    const safeName = originalName.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.]/g, "");
     const random = Math.floor(Math.random() * 1e6);
     const path = `${new Date().toISOString().slice(0, 10)}-${Date.now()}-${random}-${safeName}`;
 
-    // Upload to Supabase storage (service role key)
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(path, fileBuffer, { contentType: mimeType });
@@ -777,7 +931,6 @@ exports.handler = async function (event, context) {
       return { statusCode: 500, body: JSON.stringify({ error: uploadError.message || uploadError }) };
     }
 
-    // Get public URL (works if bucket is public)
     const { data: publicData, error: publicError } = supabase.storage.from(BUCKET).getPublicUrl(uploadData.path);
     if (publicError) console.warn("getPublicUrl error:", publicError);
 
@@ -790,7 +943,6 @@ exports.handler = async function (event, context) {
     };
   } catch (err) {
     console.error("Upload handler error (unexpected):", err && err.stack ? err.stack : err);
-    // Return plain JSON body (client expects JSON)
     return { statusCode: 500, body: JSON.stringify({ error: (err && err.message) || "Unexpected server error" }) };
   }
 };
