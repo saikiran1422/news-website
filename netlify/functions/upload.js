@@ -798,10 +798,161 @@
 
 // netlify/functions/upload.js
 // Defensive upload handler using formidable; logs parsed file shape for debugging.
+// const { createClient } = require("@supabase/supabase-js");
+// const formidableLib = require("formidable");
+// const fs = require("fs");
+// const { Readable } = require("stream");
+
+// const SUPABASE_URL = process.env.SUPABASE_URL;
+// const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// const BUCKET = process.env.SUPABASE_UPLOAD_BUCKET || "article-images";
+
+// if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+//   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment");
+// }
+
+// const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+//   auth: { persistSession: false },
+// });
+
+// exports.handler = async function (event, context) {
+//   try {
+//     if (event.httpMethod !== "POST") {
+//       return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
+//     }
+
+//     const headers = event.headers || {};
+//     const contentType = headers["content-type"] || headers["Content-Type"];
+//     if (!contentType || !contentType.startsWith("multipart/form-data")) {
+//       return { statusCode: 400, body: JSON.stringify({ error: "Content-Type must be multipart/form-data" }) };
+//     }
+
+//     // Build a buffer from event body (Netlify may base64 encode)
+//     const buffer = event.isBase64Encoded ? Buffer.from(event.body || "", "base64") : Buffer.from(event.body || "", "utf8");
+
+//     // Make a readable stream with headers so formidable can parse
+//     const req = new Readable();
+//     req.push(buffer);
+//     req.push(null);
+//     req.headers = {
+//       ...headers,
+//       "content-type": contentType,
+//       "content-length": String(buffer.length),
+//     };
+//     req.method = event.httpMethod;
+//     req.url = event.path;
+
+//     // Parse with formidable
+//     const IncomingForm = formidableLib.IncomingForm || formidableLib;
+//     const form = new IncomingForm({
+//       keepExtensions: true,
+//       multiples: false,
+//       maxFileSize: 50 * 1024 * 1024,
+//     });
+
+//     const { fields, files } = await new Promise((resolve, reject) => {
+//       form.parse(req, (err, fields, files) => {
+//         if (err) return reject(err);
+//         resolve({ fields, files });
+//       });
+//     });
+
+//     // pick the first file field (common names: file, image)
+//     const fileObj = files?.file || files?.image || (files && Object.values(files)[0]);
+//     console.log("parsed file object keys:", Object.keys(fileObj || {}));
+//     console.log("parsed file object sample:", {
+//       originalFilename: fileObj?.originalFilename || fileObj?.name,
+//       filepath: fileObj?.filepath || fileObj?.path,
+//       size: fileObj?.size,
+//       mimetype: fileObj?.mimetype || fileObj?.type,
+//       _writeStream_path: fileObj?._writeStream?.path
+//     });
+
+//     if (!fileObj) {
+//       return { statusCode: 400, body: JSON.stringify({ error: "No file uploaded" }) };
+//     }
+
+//     // Try multiple ways to find the temporary file path
+//     const localPath = fileObj.filepath || fileObj.path || fileObj._writeStream?.path;
+//     let fileBuffer = null;
+//     const originalName = fileObj.originalFilename || fileObj.name || "upload";
+//     const mimeType = fileObj.mimetype || fileObj.type || "application/octet-stream";
+
+//     if (localPath && fs.existsSync(localPath)) {
+//       fileBuffer = fs.readFileSync(localPath);
+//     } else {
+//       // fallback: some formidable versions put the bytes in a property (rare)
+//       // try to extract buffer from fileObj in-memory properties
+//       if (fileObj._writeStream && fileObj._writeStream.getBuffer && typeof fileObj._writeStream.getBuffer === "function") {
+//         try {
+//           fileBuffer = fileObj._writeStream.getBuffer();
+//         } catch (err) {
+//           // ignore
+//         }
+//       }
+
+//       // Another fallback: attempt to read from `fileObj.toJSON()` or similar (best-effort)
+//       if (!fileBuffer && fileObj?.size && fileObj?.size > 0) {
+//         // As a last resort, return helpful debugging info (so you can inspect function logs)
+//         console.error("No temporary file path found for upload. file object:", Object.keys(fileObj));
+//         return {
+//           statusCode: 500,
+//           body: JSON.stringify({
+//             error: "Uploaded file not available on server",
+//             debug: {
+//               originalFilename: originalName,
+//               size: fileObj.size,
+//               possiblePaths: {
+//                 filepath: fileObj.filepath || null,
+//                 path: fileObj.path || null,
+//                 _writeStream_path: fileObj._writeStream?.path || null
+//               }
+//             }
+//           }),
+//         };
+//       }
+//     }
+
+//     if (!fileBuffer) {
+//       return { statusCode: 500, body: JSON.stringify({ error: "Uploaded file not available on server" }) };
+//     }
+
+//     // sanitize filename and upload to Supabase storage
+//     const safeName = originalName.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.]/g, "");
+//     const random = Math.floor(Math.random() * 1e6);
+//     const path = `${new Date().toISOString().slice(0, 10)}-${Date.now()}-${random}-${safeName}`;
+
+//     const { data: uploadData, error: uploadError } = await supabase.storage
+//       .from(BUCKET)
+//       .upload(path, fileBuffer, { contentType: mimeType });
+
+//     if (uploadError) {
+//       console.error("Supabase upload error:", uploadError);
+//       return { statusCode: 500, body: JSON.stringify({ error: uploadError.message || uploadError }) };
+//     }
+
+//     const { data: publicData, error: publicError } = supabase.storage.from(BUCKET).getPublicUrl(uploadData.path);
+//     if (publicError) console.warn("getPublicUrl error:", publicError);
+
+//     return {
+//       statusCode: 200,
+//       body: JSON.stringify({
+//         path: uploadData.path,
+//         publicUrl: publicData?.publicUrl || null,
+//       }),
+//     };
+//   } catch (err) {
+//     console.error("Upload handler error (unexpected):", err && err.stack ? err.stack : err);
+//     return { statusCode: 500, body: JSON.stringify({ error: (err && err.message) || "Unexpected server error" }) };
+//   }
+// };
+
+
+// netlify/functions/upload.js
+// Accepts JSON { filename, mimeType, b64 } where b64 is base64 file body
+// Uploads to Supabase storage bucket using SERVICE_ROLE_KEY from env
+
 const { createClient } = require("@supabase/supabase-js");
-const formidableLib = require("formidable");
-const fs = require("fs");
-const { Readable } = require("stream");
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -815,124 +966,57 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
 });
 
-exports.handler = async function (event, context) {
+exports.handler = async function (event) {
   try {
     if (event.httpMethod !== "POST") {
       return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
     }
 
-    const headers = event.headers || {};
-    const contentType = headers["content-type"] || headers["Content-Type"];
-    if (!contentType || !contentType.startsWith("multipart/form-data")) {
-      return { statusCode: 400, body: JSON.stringify({ error: "Content-Type must be multipart/form-data" }) };
+    // parse JSON body (Netlify passes event.body as string; may be base64 encoded)
+    let bodyStr = event.body || "";
+    if (event.isBase64Encoded) {
+      bodyStr = Buffer.from(event.body, "base64").toString("utf8");
     }
 
-    // Build a buffer from event body (Netlify may base64 encode)
-    const buffer = event.isBase64Encoded ? Buffer.from(event.body || "", "base64") : Buffer.from(event.body || "", "utf8");
-
-    // Make a readable stream with headers so formidable can parse
-    const req = new Readable();
-    req.push(buffer);
-    req.push(null);
-    req.headers = {
-      ...headers,
-      "content-type": contentType,
-      "content-length": String(buffer.length),
-    };
-    req.method = event.httpMethod;
-    req.url = event.path;
-
-    // Parse with formidable
-    const IncomingForm = formidableLib.IncomingForm || formidableLib;
-    const form = new IncomingForm({
-      keepExtensions: true,
-      multiples: false,
-      maxFileSize: 50 * 1024 * 1024,
-    });
-
-    const { fields, files } = await new Promise((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) return reject(err);
-        resolve({ fields, files });
-      });
-    });
-
-    // pick the first file field (common names: file, image)
-    const fileObj = files?.file || files?.image || (files && Object.values(files)[0]);
-    console.log("parsed file object keys:", Object.keys(fileObj || {}));
-    console.log("parsed file object sample:", {
-      originalFilename: fileObj?.originalFilename || fileObj?.name,
-      filepath: fileObj?.filepath || fileObj?.path,
-      size: fileObj?.size,
-      mimetype: fileObj?.mimetype || fileObj?.type,
-      _writeStream_path: fileObj?._writeStream?.path
-    });
-
-    if (!fileObj) {
-      return { statusCode: 400, body: JSON.stringify({ error: "No file uploaded" }) };
+    let payload;
+    try {
+      payload = JSON.parse(bodyStr);
+    } catch (err) {
+      console.error("Invalid JSON body", err);
+      return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
     }
 
-    // Try multiple ways to find the temporary file path
-    const localPath = fileObj.filepath || fileObj.path || fileObj._writeStream?.path;
-    let fileBuffer = null;
-    const originalName = fileObj.originalFilename || fileObj.name || "upload";
-    const mimeType = fileObj.mimetype || fileObj.type || "application/octet-stream";
-
-    if (localPath && fs.existsSync(localPath)) {
-      fileBuffer = fs.readFileSync(localPath);
-    } else {
-      // fallback: some formidable versions put the bytes in a property (rare)
-      // try to extract buffer from fileObj in-memory properties
-      if (fileObj._writeStream && fileObj._writeStream.getBuffer && typeof fileObj._writeStream.getBuffer === "function") {
-        try {
-          fileBuffer = fileObj._writeStream.getBuffer();
-        } catch (err) {
-          // ignore
-        }
-      }
-
-      // Another fallback: attempt to read from `fileObj.toJSON()` or similar (best-effort)
-      if (!fileBuffer && fileObj?.size && fileObj?.size > 0) {
-        // As a last resort, return helpful debugging info (so you can inspect function logs)
-        console.error("No temporary file path found for upload. file object:", Object.keys(fileObj));
-        return {
-          statusCode: 500,
-          body: JSON.stringify({
-            error: "Uploaded file not available on server",
-            debug: {
-              originalFilename: originalName,
-              size: fileObj.size,
-              possiblePaths: {
-                filepath: fileObj.filepath || null,
-                path: fileObj.path || null,
-                _writeStream_path: fileObj._writeStream?.path || null
-              }
-            }
-          }),
-        };
-      }
+    const { filename, mimeType, b64 } = payload;
+    if (!filename || !b64) {
+      return { statusCode: 400, body: JSON.stringify({ error: "Missing filename or b64 data" }) };
     }
 
-    if (!fileBuffer) {
-      return { statusCode: 500, body: JSON.stringify({ error: "Uploaded file not available on server" }) };
-    }
+    // decode base64 -> Buffer
+    const buffer = Buffer.from(b64, "base64");
 
-    // sanitize filename and upload to Supabase storage
-    const safeName = originalName.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.]/g, "");
+    // sanitize filename
+    const safeName = String(filename).replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.-]/g, "");
     const random = Math.floor(Math.random() * 1e6);
-    const path = `${new Date().toISOString().slice(0, 10)}-${Date.now()}-${random}-${safeName}`;
+    const path = `${new Date().toISOString().slice(0,10)}-${Date.now()}-${random}-${safeName}`;
 
+    // upload
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(path, fileBuffer, { contentType: mimeType });
+      .upload(path, buffer, {
+        contentType: mimeType || "application/octet-stream",
+        cacheControl: "86400",
+      });
 
     if (uploadError) {
       console.error("Supabase upload error:", uploadError);
       return { statusCode: 500, body: JSON.stringify({ error: uploadError.message || uploadError }) };
     }
 
+    // get public url (if bucket public)
     const { data: publicData, error: publicError } = supabase.storage.from(BUCKET).getPublicUrl(uploadData.path);
-    if (publicError) console.warn("getPublicUrl error:", publicError);
+    if (publicError) {
+      console.warn("getPublicUrl error:", publicError);
+    }
 
     return {
       statusCode: 200,
@@ -942,7 +1026,7 @@ exports.handler = async function (event, context) {
       }),
     };
   } catch (err) {
-    console.error("Upload handler error (unexpected):", err && err.stack ? err.stack : err);
-    return { statusCode: 500, body: JSON.stringify({ error: (err && err.message) || "Unexpected server error" }) };
+    console.error("Upload handler unexpected error:", err && err.stack ? err.stack : err);
+    return { statusCode: 500, body: JSON.stringify({ error: err?.message || "Unexpected error" }) };
   }
 };
