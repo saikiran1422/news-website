@@ -464,8 +464,116 @@
 
 // netlify/functions/upload.js
 // Server-side Netlify Function — uses SERVICE_ROLE_KEY from process.env only (never commit it)
+// const { createClient } = require("@supabase/supabase-js");
+// const formidable = require("formidable");
+
+// const SUPABASE_URL = process.env.SUPABASE_URL;
+// const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// const BUCKET = process.env.SUPABASE_UPLOAD_BUCKET || "article-images";
+
+// if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+//   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment");
+// }
+
+// const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+//   auth: { persistSession: false },
+// });
+
+// exports.handler = async function (event, context) {
+//   try {
+//     if (event.httpMethod !== "POST") {
+//       return {
+//         statusCode: 405,
+//         body: JSON.stringify({ error: "Method not allowed - use POST" }),
+//       };
+//     }
+
+//     // Build a Promise wrapper around formidable parsing
+//     const parseForm = (ev) =>
+//       new Promise((resolve, reject) => {
+//         const form = formidable({
+//           multiples: false,
+//           keepExtensions: true,
+//           maxFileSize: 10 * 1024 * 1024, // 10MB
+//         });
+
+//         // netlify sends base64 body when binary
+//         const buffer = ev.isBase64Encoded ? Buffer.from(ev.body || "", "base64") : Buffer.from(ev.body || "", "utf8");
+
+//         // formidable expects a stream; create one
+//         const Stream = require("stream").Readable;
+//         const s = new Stream();
+//         s.push(buffer);
+//         s.push(null);
+
+//         form.parse(s, (err, fields, files) => {
+//           if (err) {
+//             reject(err);
+//             return;
+//           }
+//           resolve({ fields, files });
+//         });
+//       });
+
+//     // parse the incoming multipart form-data
+//     const { files } = await parseForm(event);
+
+//     // expect the input field to be named "file"
+//     const fileObj = files.file || files.image || Object.values(files)[0];
+//     if (!fileObj) {
+//       return { statusCode: 400, body: JSON.stringify({ error: "No file uploaded (field name should be 'file' or 'image')" }) };
+//     }
+
+//     // read file buffer from formidable file.path
+//     const fs = require("fs");
+//     const filePath = fileObj.filepath || fileObj.path; // formidable v2 uses filepath
+//     if (!filePath || !fs.existsSync(filePath)) {
+//       return { statusCode: 500, body: JSON.stringify({ error: "Uploaded file not available on server" }) };
+//     }
+
+//     const fileBuffer = fs.readFileSync(filePath);
+//     const originalName = fileObj.originalFilename || fileObj.name || "upload";
+//     const mimeType = fileObj.mimetype || fileObj.type || "application/octet-stream";
+
+//     // sanitize file name and create unique path
+//     const safeName = (originalName || "file").replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.]/g, "");
+//     const random = Math.floor(Math.random() * 1e6);
+//     const path = `${new Date().toISOString().slice(0, 10)}-${Date.now()}-${random}-${safeName}`;
+
+//     // upload to Supabase storage (service role key required for server-side writes)
+//     const { data: uploadData, error: uploadError } = await supabase.storage
+//       .from(BUCKET)
+//       .upload(path, fileBuffer, { contentType: mimeType });
+
+//     if (uploadError) {
+//       console.error("Supabase upload error:", uploadError);
+//       return { statusCode: 500, body: JSON.stringify({ error: uploadError.message || uploadError }) };
+//     }
+
+//     // get public url (works if bucket is public)
+//     const { data: publicData, error: publicError } = supabase.storage.from(BUCKET).getPublicUrl(uploadData.path);
+//     if (publicError) console.warn("getPublicUrl error:", publicError);
+
+//     return {
+//       statusCode: 200,
+//       body: JSON.stringify({
+//         path: uploadData.path,
+//         publicUrl: publicData?.publicUrl || null,
+//       }),
+//     };
+//   } catch (err) {
+//     console.error("Upload handler error (unexpected):", err && err.stack ? err.stack : err);
+//     return { statusCode: 500, body: JSON.stringify({ error: (err && err.message) || "Unexpected server error" }) };
+//   }
+// };
+
+
+// netlify/functions/upload.js
+// Server-side Netlify Function — uses SERVICE_ROLE_KEY from process.env only (never commit it)
 const { createClient } = require("@supabase/supabase-js");
-const formidable = require("formidable");
+const formidableLib = require("formidable");
+const fs = require("fs");
+const Stream = require("stream").Readable;
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -488,24 +596,24 @@ exports.handler = async function (event, context) {
       };
     }
 
-    // Build a Promise wrapper around formidable parsing
+    // create a wrapper to parse the multipart/form-data using formidable IncomingForm
     const parseForm = (ev) =>
       new Promise((resolve, reject) => {
-        const form = formidable({
-          multiples: false,
+        // use IncomingForm constructor (works across formidable versions)
+        const IncomingForm = formidableLib.IncomingForm || formidableLib;
+        const form = new IncomingForm({
           keepExtensions: true,
-          maxFileSize: 10 * 1024 * 1024, // 10MB
+          multiples: false,
+          maxFileSize: 10 * 1024 * 1024, // 10 MB
         });
 
-        // netlify sends base64 body when binary
+        // Netlify will give us the body as base64 when binary — provide a stream to formidable
         const buffer = ev.isBase64Encoded ? Buffer.from(ev.body || "", "base64") : Buffer.from(ev.body || "", "utf8");
-
-        // formidable expects a stream; create one
-        const Stream = require("stream").Readable;
         const s = new Stream();
         s.push(buffer);
         s.push(null);
 
+        // formidable expects headers to detect boundary; pass content-type header
         form.parse(s, (err, fields, files) => {
           if (err) {
             reject(err);
@@ -515,18 +623,16 @@ exports.handler = async function (event, context) {
         });
       });
 
-    // parse the incoming multipart form-data
     const { files } = await parseForm(event);
 
-    // expect the input field to be named "file"
-    const fileObj = files.file || files.image || Object.values(files)[0];
+    // pick the uploaded file (support field name 'file' or 'image' or first file)
+    const fileObj = files.file || files.image || (files && Object.values(files)[0]);
     if (!fileObj) {
       return { statusCode: 400, body: JSON.stringify({ error: "No file uploaded (field name should be 'file' or 'image')" }) };
     }
 
-    // read file buffer from formidable file.path
-    const fs = require("fs");
-    const filePath = fileObj.filepath || fileObj.path; // formidable v2 uses filepath
+    // formidable v2 uses fileObj.filepath, earlier uses fileObj.path
+    const filePath = fileObj.filepath || fileObj.path;
     if (!filePath || !fs.existsSync(filePath)) {
       return { statusCode: 500, body: JSON.stringify({ error: "Uploaded file not available on server" }) };
     }
@@ -535,12 +641,12 @@ exports.handler = async function (event, context) {
     const originalName = fileObj.originalFilename || fileObj.name || "upload";
     const mimeType = fileObj.mimetype || fileObj.type || "application/octet-stream";
 
-    // sanitize file name and create unique path
+    // sanitize filename and build unique path
     const safeName = (originalName || "file").replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.]/g, "");
     const random = Math.floor(Math.random() * 1e6);
     const path = `${new Date().toISOString().slice(0, 10)}-${Date.now()}-${random}-${safeName}`;
 
-    // upload to Supabase storage (service role key required for server-side writes)
+    // upload to Supabase storage (server uses service role key)
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(path, fileBuffer, { contentType: mimeType });
