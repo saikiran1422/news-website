@@ -23,3 +23,21 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+
+/* Google Translate widget fixes */
+#google_translate_element {
+  display: inline-block;
+  vertical-align: middle;
+}
+.goog-te-gadget {
+  font-size: 12px !important;
+  color: transparent; /* hide "Powered by Google" text if it overflows */
+}
+.goog-te-gadget .goog-te-combo {
+  height: 28px !important;
+  font-size: 12px !important;
+}
+.goog-logo-link, .goog-te-gadget span {
+  display: none !important;
+}

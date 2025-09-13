@@ -952,14 +952,248 @@
 // Accepts JSON { filename, mimeType, b64 } where b64 is base64 file body
 // Uploads to Supabase storage bucket using SERVICE_ROLE_KEY from env
 
+// const { createClient } = require("@supabase/supabase-js");
+
+// const SUPABASE_URL = process.env.SUPABASE_URL;
+// const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// const BUCKET = process.env.SUPABASE_UPLOAD_BUCKET || "article-images";
+
+// if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+//   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment");
+// }
+
+// const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+//   auth: { persistSession: false },
+// });
+
+// exports.handler = async function (event) {
+//   try {
+//     if (event.httpMethod !== "POST") {
+//       return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
+//     }
+
+//     // parse JSON body (Netlify passes event.body as string; may be base64 encoded)
+//     let bodyStr = event.body || "";
+//     if (event.isBase64Encoded) {
+//       bodyStr = Buffer.from(event.body, "base64").toString("utf8");
+//     }
+
+//     let payload;
+//     try {
+//       payload = JSON.parse(bodyStr);
+//     } catch (err) {
+//       console.error("Invalid JSON body", err);
+//       return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
+//     }
+
+//     const { filename, mimeType, b64 } = payload;
+//     if (!filename || !b64) {
+//       return { statusCode: 400, body: JSON.stringify({ error: "Missing filename or b64 data" }) };
+//     }
+
+//     // decode base64 -> Buffer
+//     const buffer = Buffer.from(b64, "base64");
+
+//     // sanitize filename
+//     const safeName = String(filename).replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.-]/g, "");
+//     const random = Math.floor(Math.random() * 1e6);
+//     const path = `${new Date().toISOString().slice(0,10)}-${Date.now()}-${random}-${safeName}`;
+
+//     // upload
+//     const { data: uploadData, error: uploadError } = await supabase.storage
+//       .from(BUCKET)
+//       .upload(path, buffer, {
+//         contentType: mimeType || "application/octet-stream",
+//         cacheControl: "86400",
+//       });
+
+//     if (uploadError) {
+//       console.error("Supabase upload error:", uploadError);
+//       return { statusCode: 500, body: JSON.stringify({ error: uploadError.message || uploadError }) };
+//     }
+
+//     // get public url (if bucket public)
+//     const { data: publicData, error: publicError } = supabase.storage.from(BUCKET).getPublicUrl(uploadData.path);
+//     if (publicError) {
+//       console.warn("getPublicUrl error:", publicError);
+//     }
+
+//     return {
+//       statusCode: 200,
+//       body: JSON.stringify({
+//         path: uploadData.path,
+//         publicUrl: publicData?.publicUrl || null,
+//       }),
+//     };
+//   } catch (err) {
+//     console.error("Upload handler unexpected error:", err && err.stack ? err.stack : err);
+//     return { statusCode: 500, body: JSON.stringify({ error: err?.message || "Unexpected error" }) };
+//   }
+// };
+
+// netlify/functions/upload.js
+// const { createClient } = require("@supabase/supabase-js");
+
+// const SUPABASE_URL = process.env.SUPABASE_URL;
+// const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// const BUCKET = process.env.SUPABASE_UPLOAD_BUCKET || "article-images";
+
+// if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+//   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment");
+// }
+
+// const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+//   auth: { persistSession: false },
+// });
+
+// exports.handler = async function (event) {
+//   try {
+//     if (event.httpMethod !== "POST") {
+//       return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
+//     }
+
+//     let bodyStr = event.body || "";
+//     if (event.isBase64Encoded) {
+//       bodyStr = Buffer.from(event.body, "base64").toString("utf8");
+//     }
+
+//     let payload;
+//     try {
+//       payload = JSON.parse(bodyStr);
+//     } catch (err) {
+//       console.error("Invalid JSON body", err);
+//       return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
+//     }
+
+//     const { filename, mimeType, b64 } = payload;
+//     if (!filename || !b64) {
+//       return { statusCode: 400, body: JSON.stringify({ error: "Missing filename or b64 data" }) };
+//     }
+
+//     const buffer = Buffer.from(b64, "base64");
+//     const safeName = String(filename).replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.-]/g, "");
+//     const random = Math.floor(Math.random() * 1e6);
+//     const path = `${new Date().toISOString().slice(0, 10)}-${Date.now()}-${random}-${safeName}`;
+
+//     const { data: uploadData, error: uploadError } = await supabase.storage
+//       .from(BUCKET)
+//       .upload(path, buffer, {
+//         contentType: mimeType || "application/octet-stream",
+//         cacheControl: "86400",
+//       });
+
+//     if (uploadError) {
+//       console.error("Supabase upload error:", uploadError);
+//       return { statusCode: 500, body: JSON.stringify({ error: uploadError.message || uploadError }) };
+//     }
+
+//     const { data: publicData, error: publicError } = supabase.storage.from(BUCKET).getPublicUrl(uploadData.path);
+//     if (publicError) {
+//       console.warn("getPublicUrl error:", publicError);
+//     }
+
+//     return {
+//       statusCode: 200,
+//       body: JSON.stringify({
+//         path: uploadData.path,
+//         publicUrl: publicData?.publicUrl || null,
+//       }),
+//     };
+//   } catch (err) {
+//     console.error("Upload handler unexpected error:", err && err.stack ? err.stack : err);
+//     return { statusCode: 500, body: JSON.stringify({ error: err?.message || "Unexpected error" }) };
+//   }
+// };
+
+// Accepts JSON { filename, mimeType, b64 } where b64 is base64 file body
+// Uploads to Supabase storage bucket using SERVICE_ROLE_KEY from env
+
+// const { createClient } = require("@supabase/supabase-js");
+
+// const SUPABASE_URL = process.env.SUPABASE_URL;
+// const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// const BUCKET = process.env.SUPABASE_UPLOAD_BUCKET || "article-images";
+
+// if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+//   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment");
+// }
+
+// const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+//   auth: { persistSession: false },
+// });
+
+// exports.handler = async function (event) {
+//   try {
+//     if (event.httpMethod !== "POST") {
+//       return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
+//     }
+
+//     let bodyStr = event.body || "";
+//     if (event.isBase64Encoded) {
+//       bodyStr = Buffer.from(event.body, "base64").toString("utf8");
+//     }
+
+//     let payload;
+//     try {
+//       payload = JSON.parse(bodyStr);
+//     } catch (err) {
+//       console.error("Invalid JSON body", err);
+//       return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
+//     }
+
+//     const { filename, mimeType, b64 } = payload;
+//     if (!filename || !b64) {
+//       return { statusCode: 400, body: JSON.stringify({ error: "Missing filename or b64 data" }) };
+//     }
+
+//     const buffer = Buffer.from(b64, "base64");
+
+//     const safeName = String(filename).replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.-]/g, "");
+//     const random = Math.floor(Math.random() * 1e6);
+//     const path = `${new Date().toISOString().slice(0,10)}-${Date.now()}-${random}-${safeName}`;
+
+//     const { data: uploadData, error: uploadError } = await supabase.storage
+//       .from(BUCKET)
+//       .upload(path, buffer, {
+//         contentType: mimeType || "application/octet-stream",
+//         cacheControl: "86400",
+//       });
+
+//     if (uploadError) {
+//       console.error("Supabase upload error:", uploadError);
+//       return { statusCode: 500, body: JSON.stringify({ error: uploadError.message || uploadError }) };
+//     }
+
+//     const { data: publicData, error: publicError } = supabase.storage.from(BUCKET).getPublicUrl(uploadData.path);
+//     if (publicError) {
+//       console.warn("getPublicUrl error:", publicError);
+//     }
+
+//     return {
+//       statusCode: 200,
+//       body: JSON.stringify({
+//         path: uploadData.path,
+//         publicUrl: publicData?.publicUrl || null,
+//       }),
+//     };
+//   } catch (err) {
+//     console.error("Upload handler unexpected error:", err && err.stack ? err.stack : err);
+//     return { statusCode: 500, body: JSON.stringify({ error: err?.message || "Unexpected error" }) };
+//   }
+// };
+
+// netlify/functions/upload.js
+require("dotenv").config(); // ✅ allow .env in local dev
 const { createClient } = require("@supabase/supabase-js");
 
+// 🔑 Environment variables
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = process.env.SUPABASE_UPLOAD_BUCKET || "article-images";
 
+// 🚨 Check env setup
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment");
+  console.error("❌ Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment");
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -969,10 +1203,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 exports.handler = async function (event) {
   try {
     if (event.httpMethod !== "POST") {
-      return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
+      return {
+        statusCode: 405,
+        body: JSON.stringify({ error: "Method not allowed" }),
+      };
     }
 
-    // parse JSON body (Netlify passes event.body as string; may be base64 encoded)
+    // 📝 Decode request body
     let bodyStr = event.body || "";
     if (event.isBase64Encoded) {
       bodyStr = Buffer.from(event.body, "base64").toString("utf8");
@@ -982,7 +1219,7 @@ exports.handler = async function (event) {
     try {
       payload = JSON.parse(bodyStr);
     } catch (err) {
-      console.error("Invalid JSON body", err);
+      console.error("❌ Invalid JSON body", err);
       return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) };
     }
 
@@ -991,32 +1228,31 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: "Missing filename or b64 data" }) };
     }
 
-    // decode base64 -> Buffer
     const buffer = Buffer.from(b64, "base64");
 
-    // sanitize filename
-    const safeName = String(filename).replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_.-]/g, "");
+    // ✅ Safe filename
+    const safeName = String(filename)
+      .replace(/\s+/g, "-")
+      .replace(/[^a-zA-Z0-9._-]/g, "");
     const random = Math.floor(Math.random() * 1e6);
-    const path = `${new Date().toISOString().slice(0,10)}-${Date.now()}-${random}-${safeName}`;
+    const path = `${new Date().toISOString().slice(0, 10)}-${Date.now()}-${random}-${safeName}`;
 
-    // upload
+    // 📤 Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(path, buffer, {
         contentType: mimeType || "application/octet-stream",
         cacheControl: "86400",
+        upsert: false,
       });
 
     if (uploadError) {
-      console.error("Supabase upload error:", uploadError);
+      console.error("❌ Supabase upload error:", uploadError);
       return { statusCode: 500, body: JSON.stringify({ error: uploadError.message || uploadError }) };
     }
 
-    // get public url (if bucket public)
-    const { data: publicData, error: publicError } = supabase.storage.from(BUCKET).getPublicUrl(uploadData.path);
-    if (publicError) {
-      console.warn("getPublicUrl error:", publicError);
-    }
+    // 🌍 Get public URL
+    const { data: publicData } = supabase.storage.from(BUCKET).getPublicUrl(uploadData.path);
 
     return {
       statusCode: 200,
@@ -1026,7 +1262,7 @@ exports.handler = async function (event) {
       }),
     };
   } catch (err) {
-    console.error("Upload handler unexpected error:", err && err.stack ? err.stack : err);
+    console.error("❌ Upload handler unexpected error:", err);
     return { statusCode: 500, body: JSON.stringify({ error: err?.message || "Unexpected error" }) };
   }
 };
