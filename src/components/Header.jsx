@@ -3260,12 +3260,13 @@ useEffect(() => {
       </li>
       
       
+      
     ))}
-    {(
+    {/* {(
       <li className="text-sm text-gray-500">
         {language === "te" ? "పాపులర్ లేదు" : "No popular articles"}
       </li>
-    )}
+    )} */}
     
   </ul>
 )}
