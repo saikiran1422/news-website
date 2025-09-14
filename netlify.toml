@@ -11,3 +11,8 @@
   from = "/robots.txt"
   to = "/.netlify/functions/robots"
   status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://.googletagmanager.com https://.google-analytics.com; style-src 'self' 'unsafe-inline'; img-src * blob: data:; font-src 'self' data:; connect-src 'self' https://kxeqswkkvjvedhxlzxph.supabase.co https://.google-analytics.com https://.googletagmanager.com; frame-src https://www.youtube.com https://youtube.com https://www.googletagmanager.com"
