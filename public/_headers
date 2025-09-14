@@ -1,0 +1,23 @@
+/*
+
+  # Enforce HTTPS
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+
+  # Prevent MIME type sniffing
+  X-Content-Type-Options: nosniff
+
+  # Frame protection
+  X-Frame-Options: SAMEORIGIN
+
+  # XSS protection
+  X-XSS-Protection: 1; mode=block
+
+  # Referrer policy
+  Referrer-Policy: strict-origin-when-cross-origin
+
+  # Content Security Policy
+  Content-Security-Policy: default-src 'self';
+    img-src * data:;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://cdn.onesignal.com;
+    style-src 'self' 'unsafe-inline';
+    frame-src https://www.youtube.com https://*.google.com;

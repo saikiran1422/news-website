@@ -3415,10 +3415,6 @@ export default function AdminPage() {
                }
                </div>
 
-
-
-
-                
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => startEdit(a)}

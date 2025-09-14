@@ -17,6 +17,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import { LanguageProvider } from "./context/LanguageContext";
+import { HelmetProvider } from "react-helmet-async"; //
 import "./index.css";
 
 function loadGoogleTranslate() {
@@ -60,8 +61,11 @@ initOneSignal();
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
+    <HelmetProvider>
     <LanguageProvider>
       <App />
     </LanguageProvider>
+    </HelmetProvider>
   </React.StrictMode>
 );
+

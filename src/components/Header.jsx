@@ -3136,7 +3136,7 @@ useEffect(() => {
           to="/"
           className="flex-1 text-center text-xl font-bold hover:text-yellow-300"
         >
-          📰 {language === "te" ? "నా వార్తా సైట్" : "My News Site"}
+          📰 {language === "te" ? "నా వార్తా సైట్" : "SkyNews"}
         </Link>
 
         {/* RIGHT: Search + Language + Subscribe */}
@@ -3161,6 +3161,14 @@ useEffect(() => {
           <button className="bg-yellow-400 text-black px-3 py-1 rounded font-medium hover:bg-yellow-300">
             {language === "te" ? "చందా" : "Subscribe"}
           </button>
+          {session && (
+  <Link
+    to="/admin"
+    className="bg-green-600 text-white px-3 py-1 rounded font-medium hover:bg-green-500"
+  >
+    {language === "te" ? "అడ్మిన్" : "Admin"}
+  </Link>
+)}
         </div>
       </div>
 

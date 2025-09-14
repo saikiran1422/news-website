@@ -215,6 +215,52 @@
 //   );
 // }
 
+// import React from "react";
+// import {
+//   FaFacebook,
+//   FaTwitter,
+//   FaInstagram,
+//   FaLinkedin,
+//   FaYoutube,
+//   FaWhatsapp,
+// } from "react-icons/fa";
+// import { useLanguage } from "../context/LanguageContext";
+
+// export default function Footer() {
+//   const { language } = useLanguage();
+
+//   return (
+//     <footer className="bg-blue-900 text-white mt-8">
+//       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 p-6">
+//         <div>
+//           © {new Date().getFullYear()} {language === "te" ? "నా వార్తా సైట్" : "My News Site"}.{" "}
+//           {language === "te" ? "అన్ని హక్కులు రిజర్వు చేయబడ్డాయి." : "All rights reserved."}
+//         </div>
+//         <div className="flex items-center gap-4 text-xl">
+//           <a href="https://facebook.com/yourpage" target="_blank" rel="noreferrer" className="hover:opacity-80">
+//             <FaFacebook />
+//           </a>
+//           <a href="https://twitter.com/yourprofile" target="_blank" rel="noreferrer" className="hover:opacity-80">
+//             <FaTwitter />
+//           </a>
+//           <a href="https://instagram.com/yourprofile" target="_blank" rel="noreferrer" className="hover:opacity-80">
+//             <FaInstagram />
+//           </a>
+//           <a href="https://linkedin.com/in/yourprofile" target="_blank" rel="noreferrer" className="hover:opacity-80">
+//             <FaLinkedin />
+//           </a>
+//           <a href="https://youtube.com/yourchannel" target="_blank" rel="noreferrer" className="hover:opacity-80">
+//             <FaYoutube />
+//           </a>
+//           <a href="https://wa.me/1234567890" target="_blank" rel="noreferrer" className="hover:opacity-80">
+//             <FaWhatsapp />
+//           </a>
+//         </div>
+//       </div>
+//     </footer>
+//   );
+// }
+
 import React from "react";
 import {
   FaFacebook,
@@ -225,6 +271,7 @@ import {
   FaWhatsapp,
 } from "react-icons/fa";
 import { useLanguage } from "../context/LanguageContext";
+import { Link } from "react-router-dom";
 
 export default function Footer() {
   const { language } = useLanguage();
@@ -232,27 +279,78 @@ export default function Footer() {
   return (
     <footer className="bg-blue-900 text-white mt-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 p-6">
-        <div>
-          © {new Date().getFullYear()} {language === "te" ? "నా వార్తా సైట్" : "My News Site"}.{" "}
-          {language === "te" ? "అన్ని హక్కులు రిజర్వు చేయబడ్డాయి." : "All rights reserved."}
+        
+        {/* Left section with privacy + terms and copyright */}
+        <div className="text-center md:text-left">
+          {/* Privacy Policy & Terms links */}
+          <div className="mb-2">
+            <Link to="/privacy-policy" className="hover:underline">
+              {language === "te" ? "గోప్యతా విధానం" : "Privacy Policy"}
+            </Link>
+            <span className="mx-2">|</span>
+            <Link to="/terms" className="hover:underline">
+              {language === "te" ? "నియమాలు & షరతులు" : "Terms & Conditions"}
+            </Link>
+          </div>
+
+          {/* Copyright */}
+          <div>
+            © {new Date().getFullYear()}{" "}
+            {language === "te" ? "నా వార్తా సైట్" : "My News Site"}.{" "}
+            {language === "te"
+              ? "అన్ని హక్కులు రిజర్వు చేయబడ్డాయి."
+              : "All rights reserved."}
+          </div>
         </div>
+
+        {/* Right section with social icons */}
         <div className="flex items-center gap-4 text-xl">
-          <a href="https://facebook.com/yourpage" target="_blank" rel="noreferrer" className="hover:opacity-80">
+          <a
+            href="https://facebook.com/yourpage"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:opacity-80"
+          >
             <FaFacebook />
           </a>
-          <a href="https://twitter.com/yourprofile" target="_blank" rel="noreferrer" className="hover:opacity-80">
+          <a
+            href="https://twitter.com/yourprofile"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:opacity-80"
+          >
             <FaTwitter />
           </a>
-          <a href="https://instagram.com/yourprofile" target="_blank" rel="noreferrer" className="hover:opacity-80">
+          <a
+            href="https://instagram.com/yourprofile"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:opacity-80"
+          >
             <FaInstagram />
           </a>
-          <a href="https://linkedin.com/in/yourprofile" target="_blank" rel="noreferrer" className="hover:opacity-80">
+          <a
+            href="https://linkedin.com/in/yourprofile"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:opacity-80"
+          >
             <FaLinkedin />
           </a>
-          <a href="https://youtube.com/yourchannel" target="_blank" rel="noreferrer" className="hover:opacity-80">
+          <a
+            href="https://youtube.com/yourchannel"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:opacity-80"
+          >
             <FaYoutube />
           </a>
-          <a href="https://wa.me/1234567890" target="_blank" rel="noreferrer" className="hover:opacity-80">
+          <a
+            href="https://wa.me/1234567890"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:opacity-80"
+          >
             <FaWhatsapp />
           </a>
         </div>
