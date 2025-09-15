@@ -14,8 +14,9 @@
 
 [[redirects]]
   from = "/articles/:id"
-  to = "/.netlify/functions/article"
+  to = "/.netlify/functions/article-meta/:id"
   status = 200
+  force = true
 
 [[headers]]
   for = "/*"

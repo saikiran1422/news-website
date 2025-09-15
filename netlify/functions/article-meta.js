@@ -9,7 +9,7 @@ export async function handler(event) {
   const id = parseInt(match[1], 10);
   const { data: article } = await supabase
     .from("articles")
-    .select("id, title_en, title_te, summary_en, summary_te, image_url, updated_at, created_at")
+    .select("id, title_en, summary_en, image_url, updated_at, created_at")
     .eq("id", id)
     .single();
 
@@ -17,7 +17,7 @@ export async function handler(event) {
     return { statusCode: 404, body: "Article not found" };
   }
 
-  const title = article.title_en;
+  const title = article.title_en || "Article";
   const description = article.summary_en || "";
   const image = article.image_url || "https://your-domain.com/placeholder.png";
   const url = `https://your-domain.com/articles/${id}`;
@@ -39,8 +39,8 @@ export async function handler(event) {
   <meta name="twitter:image" content="${image}">
 </head>
 <body>
-  <div id="root"></div>
-  <script src="/index.html"></script>
+  <div id="root">Loading article...</div>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>`;
 
