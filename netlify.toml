@@ -12,6 +12,13 @@
   to = "/.netlify/functions/robots"
   status = 200
 
+[[plugins]]
+  package = "@netlify/plugin-prerender"
+
+[plugins.inputs]
+# Prerender all article pages
+paths = ["/articles/*"]
+
 [[headers]]
   for = "/*"
   [headers.values]
