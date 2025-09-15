@@ -426,64 +426,8 @@ import { formatDate } from "../utils/date";
 import MetaTags from "../components/MetaTags";   // ✅ SEO
 import SelfAd from "../components/SelfAd";       // ✅ Self ads
 import GoogleAds from "../components/GoogleAds"; // ✅ Google ads
+import NewsTabsBar from "../components/NewsTabsBar";
 
-// function Slider({ items = [], language = "en" }) {
-//   const [index, setIndex] = useState(0);
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     if (!items || items.length <= 1) return;
-//     const id = setInterval(() => setIndex((i) => (i + 1) % items.length), 4500);
-//     return () => clearInterval(id);
-//   }, [items]);
-
-//   if (!items || items.length === 0) return null;
-//   const current = items[index];
-
-//   return (
-//     <div
-//       className="w-full mb-6 relative rounded-lg overflow-hidden cursor-pointer"
-//       onClick={() => navigate(`/articles/${current.id}`)}
-//     >
-//       {current.image_url ? (
-//         <img
-//           src={current.image_url}
-//           alt={language === "en" ? current.title_en : current.title_te}
-//           className="w-full h-64 object-cover"
-//         />
-//       ) : (
-//         <div className="w-full h-64 bg-gray-200 flex items-center justify-center text-gray-500">
-//           No image
-//         </div>
-//       )}
-//       <div className="absolute left-4 bottom-4 right-4 bg-gradient-to-t from-black/70 to-transparent p-4 rounded">
-//         <div className="inline-block bg-red-600 text-white px-3 py-1 text-xs font-bold rounded">
-//           {language === "en" ? "FEATURE" : "హైలైట్"}
-//         </div>
-//         <h2 className="text-xl md:text-2xl font-bold text-white mt-2">
-//           {language === "en" ? current.title_en : current.title_te}
-//         </h2>
-//         {current.updated_at || current.created_at ? (
-//           <p className="text-gray-300 text-xs mt-1">
-//             {formatDate(current.updated_at || current.created_at)}
-//           </p>
-//         ) : null}
-//         <p className="text-sm text-gray-200 mt-2 line-clamp-2">
-//           {language === "en" ? current.summary_en : current.summary_te}
-//         </p>
-//         <button
-//           onClick={(e) => {
-//             e.stopPropagation();
-//             navigate(`/articles/${current.id}`);
-//           }}
-//           className="mt-3 inline-block bg-white text-red-600 px-4 py-1 rounded font-semibold hover:bg-gray-100"
-//         >
-//           {language === "te" ? "మరిన్ని చదవండి →" : "Read more →"}
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
 
 function Slider({ items = [], language = "en" }) {
   const [index, setIndex] = useState(0);
@@ -624,6 +568,8 @@ export default function HomePage() {
 
       <div className="md:flex md:gap-6">
         <div className="md:flex-1">
+
+          <NewsTabsBar/>
           <Slider items={sliderItems} language={language} />
 
           {/* ✅ Ads after slider */}
