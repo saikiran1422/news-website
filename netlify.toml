@@ -12,8 +12,7 @@
   to = "/.netlify/functions/robots"
   status = 200
 
-[[plugins]]
-  package = "@netlify/plugin-prerender"
+
 
   [plugins.inputs]
     # Pre-render all article pages so WhatsApp/Facebook/Twitter can fetch proper OG tags
