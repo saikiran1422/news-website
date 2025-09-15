@@ -561,7 +561,12 @@ export default function ArticlePage() {
   return (
     <article className="bg-white p-6 rounded-lg shadow">
       {/* ✅ SEO MetaTags */}
-      <MetaTags title={title} description={content?.slice(0, 150)} image={article.image_url} />
+<MetaTags
+  title={title}
+  description={content?.slice(0, 150)}
+  image={article.image_url}
+  url={`${window.location.origin}/articles/${article.id}`}
+/>
 
       <nav className="mb-3 text-sm text-gray-500">
         <Link to="/">{language === "te" ? "హోమ్" : "Home"}</Link> ›{" "}
